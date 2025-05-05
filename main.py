@@ -1,25 +1,24 @@
 """
 crochet_counter_v2.py
 
-Streamlit app with step counters per rep.
-Each rep has:
- - One number input for standard stitches (SC)
- - One number input for increased stitches (INC), which counts double
-Sidebar lets you configure max SC and INC per rep, and shows progress summary.
+Streamlit app with counters instead of checkboxes per rep.
+Allows per-rep counts for standard and increased stitches.
+Sidebar config + live progress summary.
 """
 
 import streamlit as st
 
-# ── Defaults ─────────────────────────────────────────────────────────────────
+# ── Defaults ────────────────────────────────────────────────────────────────
 DEFAULT_SC   = 2
 DEFAULT_INC  = 1
 DEFAULT_REPS = 6
 
 def reset_all():
-    keys = list(st.session_state.keys())
-    for k in keys:
+    for k in list(st.session_state.keys()):
         if k.startswith("rep"):
             del st.session_state[k]
+    # Reset config values safely
+    st.session_state.clear()
     st.session_state["sc_per_rep"] = DEFAULT_SC
     st.session_state["inc_per_rep"] = DEFAULT_INC
     st.session_state["reps_count"]  = DEFAULT_REPS
@@ -30,21 +29,28 @@ def main():
     # ── Sidebar Config ────────────────────────────────────────────────────────
     st.sidebar.header("Configuration")
 
+    # Placeholders so reset works before instantiation
+    if "sc_per_rep" not in st.session_state:
+        st.session_state["sc_per_rep"] = DEFAULT_SC
+    if "inc_per_rep" not in st.session_state:
+        st.session_state["inc_per_rep"] = DEFAULT_INC
+    if "reps_count" not in st.session_state:
+        st.session_state["reps_count"] = DEFAULT_REPS
+
     sc_per_rep = st.sidebar.number_input(
-        "Standard stitches per rep",
-        min_value=0, value=DEFAULT_SC, step=1, key="sc_per_rep"
+        "Standard stitches per rep", min_value=0,
+        value=st.session_state["sc_per_rep"], step=1, key="sc_per_rep"
     )
     inc_per_rep = st.sidebar.number_input(
-        "Increased stitches per rep",
-        min_value=0, value=DEFAULT_INC, step=1, key="inc_per_rep"
+        "Increased stitches per rep", min_value=0,
+        value=st.session_state["inc_per_rep"], step=1, key="inc_per_rep"
     )
     reps_count = st.sidebar.number_input(
-        "Total reps in row",
-        min_value=1, value=DEFAULT_REPS, step=1, key="reps_count"
+        "Total reps in row", min_value=1,
+        value=st.session_state["reps_count"], step=1, key="reps_count"
     )
 
-    if st.sidebar.button("🔄 Reset All"):
-        reset_all()
+    st.sidebar.button("🔄 Reset All", on_click=reset_all)
 
     # ── Derived totals ────────────────────────────────────────────────────────
     stitches_per_rep = sc_per_rep + inc_per_rep * 2
