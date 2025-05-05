@@ -1,24 +1,25 @@
-"""
-crochet_counter_v2.py
-
-Streamlit app with counters instead of checkboxes per rep.
-Allows per-rep counts for standard and increased stitches.
-Sidebar config + live progress summary.
-"""
-
 import streamlit as st
 
 # ── Defaults ────────────────────────────────────────────────────────────────
-DEFAULT_SC   = 2
-DEFAULT_INC  = 1
-DEFAULT_REPS = 6
+DEFAULT_SC     = 2
+DEFAULT_INC    = 1
+DEFAULT_REPS   = 6
+DEFAULT_ROUND  = 1
 
 def reset_all():
+    # Preserve the round number
+    current_round = st.session_state.get("round_number", DEFAULT_ROUND)
+
+    # Clear rep-related state
     for k in list(st.session_state.keys()):
         if k.startswith("rep"):
             del st.session_state[k]
-    # Reset config values safely
+
+    # Clear everything else
     st.session_state.clear()
+
+    # Restore round number and defaults
+    st.session_state["round_number"] = current_round
     st.session_state["sc_per_rep"] = DEFAULT_SC
     st.session_state["inc_per_rep"] = DEFAULT_INC
     st.session_state["reps_count"]  = DEFAULT_REPS
@@ -29,13 +30,21 @@ def main():
     # ── Sidebar Config ────────────────────────────────────────────────────────
     st.sidebar.header("Configuration")
 
-    # Placeholders so reset works before instantiation
-    if "sc_per_rep" not in st.session_state:
-        st.session_state["sc_per_rep"] = DEFAULT_SC
-    if "inc_per_rep" not in st.session_state:
-        st.session_state["inc_per_rep"] = DEFAULT_INC
-    if "reps_count" not in st.session_state:
-        st.session_state["reps_count"] = DEFAULT_REPS
+    # Init placeholders for session state config
+    for key, val in {
+        "round_number": DEFAULT_ROUND,
+        "sc_per_rep": DEFAULT_SC,
+        "inc_per_rep": DEFAULT_INC,
+        "reps_count": DEFAULT_REPS
+    }.items():
+        if key not in st.session_state:
+            st.session_state[key] = val
+
+    round_number = st.sidebar.number_input(
+        "🧵 Current round",
+        min_value=1, value=st.session_state["round_number"], step=1,
+        key="round_number"
+    )
 
     sc_per_rep = st.sidebar.number_input(
         "Standard stitches per rep", min_value=0,
@@ -85,9 +94,9 @@ def main():
     # ── Sidebar summary ───────────────────────────────────────────────────────
     st.sidebar.markdown("---")
     st.sidebar.subheader("Progress")
+    st.sidebar.write(f"🧶 Round: **{round_number}**")
     st.sidebar.write(f"Completed stitches: **{total_done} / {total_stitches}**")
     st.sidebar.write(f"Completed reps: **{reps_completed} / {reps_count}**")
-
 
 if __name__ == "__main__":
     main()
